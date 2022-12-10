@@ -4,6 +4,43 @@
 
 int main(int argc, char **argv)
 {
+    if (argc != 3)
+    {
+        printf("Usage: %s <h/c> <h/c>", argv[0]);
+        return 0;
+    }
+
+    bool player1cpu = false;
+    bool player2cpu = false;
+
+    if (argv[1][0] == 'h')
+    {
+        player1cpu = false;
+    }
+    else if (argv[1][0] == 'c')
+    {
+        player1cpu = true;
+    }
+    else
+    {
+        printf("Unknown option '%c'\n", argv[1][0]);
+        return 0;
+    }
+
+    if (argv[2][0] == 'h')
+    {
+        player2cpu = false;
+    }
+    else if (argv[2][0] == 'c')
+    {
+        player2cpu = true;
+    }
+    else
+    {
+        printf("Unknown option '%c'\n", argv[1][0]);
+        return 0;
+    }
+
     printf("Welcome to Connect Four!\n");
 
     cf_board_t board;
@@ -19,16 +56,22 @@ int main(int argc, char **argv)
         while (get_board_status(&board) == UNFINISHED)
         {
 
-            printf("%s turn, pick a column: ", red_turn ? "Red" : "Yellow");
-
-            scanf("%d", &column);
-
-            column--;
-
-            if (!move_valid(&board, column))
+            if ((!red_turn && !player1cpu) || (red_turn && !player2cpu))
             {
-                printf("You can't put a token in that column! Try again.\n");
-                continue;
+
+                printf("%s turn, pick a column: ", red_turn ? "Red" : "Yellow");
+
+                scanf("%d", &column);
+
+                column--;
+
+                if (!move_valid(&board, column))
+                {
+                    printf("You can't put a token in that column! Try again.\n");
+                    continue;
+                }
+            } else {
+                column = find_best_move(&board, !red_turn);
             }
 
             make_move(&board, column);

@@ -1,6 +1,7 @@
 #include "connectfour.h"
 
 #include <stdio.h>
+#include <time.h>
 
 #include "utils.h"
 
@@ -8,7 +9,15 @@
 #define PLAYER_RED 1
 #define TOP_BITMASK 0b1000000100000010000001000000100000010000001000000L
 
+#define BASE_SCORE 50
+#define INVALID -1
+
+#define MAX_DEPTH 10
+
 #define DEBUG false
+
+static uint8_t column_choice;
+static uint64_t minimax_count;
 
 // Maps the enum value to a string for readability
 char *map_state_to_str(cf_status_t status)
@@ -150,4 +159,105 @@ void print_board(cf_board_t *board)
         printf("\n");
     }
     printf("-------------\n");
+}
+
+static int8_t minimax(cf_board_t *board, bool yellow_plays, uint8_t depth, uint8_t max_depth)
+{
+
+    if (depth > max_depth) {
+        return INVALID;
+    }
+
+    minimax_count++;
+
+    cf_status_t status = get_board_status(board);
+    switch (status)
+    {
+    case STALEMATE:
+        return 0;
+    case YELLOW_WIN:
+        return yellow_plays ? BASE_SCORE : BASE_SCORE * -1;
+    case RED_WIN:
+        return yellow_plays ? BASE_SCORE * -1 : BASE_SCORE;
+    case UNFINISHED:
+
+    {
+        int8_t scores[NUM_COLUMNS];
+        uint8_t scores_index = 0;
+
+        // Figure out what the score is for all the other boards
+        for (uint8_t i = 0; i < NUM_COLUMNS; i++)
+        {
+
+            if (move_valid(board, i))
+            {
+                // Simulate move
+                make_move(board, i);
+
+                // Call minimax recursively
+                scores[i] = minimax(board, !yellow_plays, depth + 1, max_depth);
+
+                // Undo move
+                undo_move(board);
+            }
+            else
+            {
+                scores[i] = INVALID;
+            }
+        }
+
+        int8_t best_score;
+
+        // Pick the best move based on the scores
+        if (yellow_plays)
+        {
+            int8_t best_score = BASE_SCORE * -1;
+            for (uint8_t i = 0; i < NUM_COLUMNS; i++)
+            {
+                if (scores[i] == INVALID)
+                {
+                    continue;
+                }
+
+                if (scores[i] > best_score)
+                {
+                    best_score = scores[i];
+                    column_choice = i;
+                }
+            }
+        }
+        else
+        {
+            int8_t best_score = BASE_SCORE;
+            for (uint8_t i = 0; i < NUM_COLUMNS; i++)
+            {
+                if (scores[i] == INVALID)
+                {
+                    continue;
+                }
+
+                if (scores[i] < best_score)
+                {
+                    best_score = scores[i];
+                    column_choice = i;
+                }
+            }
+        }
+
+        // Return that score
+        return best_score;
+    }
+    }
+}
+
+// Uses a minimax algorithm to find the best move
+uint8_t find_best_move(cf_board_t *board, bool yellow_plays)
+{
+    time_t start = time(NULL);
+    minimax_count = 0;
+    minimax(board, yellow_plays, 0, MAX_DEPTH);
+    time_t end = time(NULL);
+    printf("Computer analyzed %llu moves\n", minimax_count);
+    printf("Analysis took %.2f seconds\n", difftime(end, start));
+    return column_choice;
 }
