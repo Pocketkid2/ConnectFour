@@ -1,17 +1,19 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "connectfour.h"
 
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    if (argc != 4)
     {
-        printf("Usage: %s <h/c> <h/c>", argv[0]);
+        printf("Usage: %s <h/c> <h/c> <moves>", argv[0]);
         return 0;
     }
 
     bool player1cpu = false;
     bool player2cpu = false;
+    uint8_t moves_ahead = 0;
 
     if (argv[1][0] == 'h')
     {
@@ -41,7 +43,14 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    printf("Welcome to Connect Four!\n");
+    moves_ahead = atoi(argv[3]);
+
+    if (moves_ahead == 0) {
+        printf("Moves ahead must be greater than zero!\n");
+        return 0;
+    }
+
+    printf("Welcome to Connect Four! CPU will look %d moves ahead\n", moves_ahead);
 
     cf_board_t board;
 
@@ -71,7 +80,7 @@ int main(int argc, char **argv)
                     continue;
                 }
             } else {
-                column = find_best_move(&board, !red_turn);
+                column = find_best_move(&board, !red_turn, moves_ahead);
             }
 
             make_move(&board, column);

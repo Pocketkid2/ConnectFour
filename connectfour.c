@@ -12,8 +12,6 @@
 #define BASE_SCORE 50
 #define INVALID -1
 
-#define MAX_DEPTH 10
-
 #define DEBUG false
 
 static uint8_t column_choice;
@@ -49,16 +47,32 @@ cf_status_t get_board_status(cf_board_t *board)
 {
     if (has_win(board->bitboard[PLAYER_YELLOW]))
     {
+        if (DEBUG)
+        {
+            printf("returning yellow win from get_board_status()\n");
+        }
         return YELLOW_WIN;
     }
     if (has_win(board->bitboard[PLAYER_RED]))
     {
+        if (DEBUG)
+        {
+            printf("returning red win from get_board_status()\n");
+        }
         return RED_WIN;
     }
     // If all the spaces along the top are occupied, the board is full
     if ((((TOP_BITMASK >> 1) & board->bitboard[PLAYER_YELLOW]) | ((TOP_BITMASK >> 1) & board->bitboard[PLAYER_RED])) == (TOP_BITMASK >> 1))
     {
+        if (DEBUG)
+        {
+            printf("returning stalemate from get_board_status()\n");
+        }
         return STALEMATE;
+    }
+    if (DEBUG)
+    {
+        printf("returning unfinished from get_board_status()\n");
     }
     return UNFINISHED;
 }
@@ -66,7 +80,6 @@ cf_status_t get_board_status(cf_board_t *board)
 // Initializes a new, empty board
 void init_board(cf_board_t *board)
 {
-
     // Set the bitboards to empty
     for (int i = 0; i < NUM_PLAYERS; i++)
     {
@@ -92,7 +105,6 @@ void init_board(cf_board_t *board)
 // Places a token in the column (assumes valid)
 void make_move(cf_board_t *board, uint8_t column)
 {
-
     // Find the bit index we are placing in and increment the next open index for
     // that column at the same time
     uint64_t move = 1L << board->height[column]++;
@@ -108,7 +120,6 @@ void make_move(cf_board_t *board, uint8_t column)
 // Counterpart to make_move, removes the last move that was made
 static void undo_move(cf_board_t *board)
 {
-
     // Figure out what column the last move was on by decrementing the counter
     uint8_t column = board->moves[--board->counter];
 
@@ -163,8 +174,8 @@ void print_board(cf_board_t *board)
 
 static int8_t minimax(cf_board_t *board, bool yellow_plays, uint8_t depth, uint8_t max_depth)
 {
-
-    if (depth > max_depth) {
+    if (depth > max_depth)
+    {
         return INVALID;
     }
 
@@ -176,9 +187,9 @@ static int8_t minimax(cf_board_t *board, bool yellow_plays, uint8_t depth, uint8
     case STALEMATE:
         return 0;
     case YELLOW_WIN:
-        return yellow_plays ? BASE_SCORE : BASE_SCORE * -1;
-    case RED_WIN:
         return yellow_plays ? BASE_SCORE * -1 : BASE_SCORE;
+    case RED_WIN:
+        return yellow_plays ? BASE_SCORE : BASE_SCORE * -1;
     case UNFINISHED:
 
     {
@@ -203,6 +214,16 @@ static int8_t minimax(cf_board_t *board, bool yellow_plays, uint8_t depth, uint8
             else
             {
                 scores[i] = INVALID;
+            }
+        }
+
+        if (DEBUG)
+        {
+            printf("Final score analysis: (depth %d, yellow_plays = %s)\n", depth, yellow_plays ? "yes" : "no");
+            printf("Column | Score\n");
+            for (int i = 0; i < NUM_COLUMNS; i++)
+            {
+                printf("%d      | %d\n", i, scores[i]);
             }
         }
 
@@ -251,13 +272,16 @@ static int8_t minimax(cf_board_t *board, bool yellow_plays, uint8_t depth, uint8
 }
 
 // Uses a minimax algorithm to find the best move
-uint8_t find_best_move(cf_board_t *board, bool yellow_plays)
+uint8_t find_best_move(cf_board_t *board, bool yellow_plays, uint8_t num_moves)
 {
-    time_t start = time(NULL);
+    // time_t start = time(NULL);
+    clock_t start = clock();
     minimax_count = 0;
-    minimax(board, yellow_plays, 0, MAX_DEPTH);
-    time_t end = time(NULL);
+    minimax(board, yellow_plays, 0, num_moves);
+    // time_t end = time(NULL);
+    clock_t end = clock();
     printf("Computer analyzed %llu moves\n", minimax_count);
-    printf("Analysis took %.2f seconds\n", difftime(end, start));
+    // printf("Analysis took %.2f seconds\n", difftime(end, start));
+    printf("Analysys took %.2f\n", (double)(end - start) / (double)CLOCKS_PER_SEC);
     return column_choice;
 }

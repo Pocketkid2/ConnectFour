@@ -62,6 +62,6 @@ bool move_valid(cf_board_t *board, uint8_t column);
 void print_board(cf_board_t *board);
 
 // Uses a minimax algorithm to find the best move
-uint8_t find_best_move(cf_board_t *board, bool yellow_plays);
+uint8_t find_best_move(cf_board_t *board, bool yellow_plays, uint8_t num_moves);
 
 #endif
